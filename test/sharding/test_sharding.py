@@ -150,11 +150,7 @@ class SampleSharding(object):
         query = None
 
         while True:
-            print "starting query"
-            print time.time()
             query = self.query_containers()
-            print "finished query"
-            print time.time()
             if len(query) > 0:
                 break
 
