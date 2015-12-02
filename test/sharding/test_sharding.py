@@ -93,8 +93,7 @@ class SampleSharding(object):
     @staticmethod
     def find_paths(pattern, root_path):
 
-        '''Simple method to find paths
-        An external function and decorator seemed unnecessary'''
+        '''Simple method to find paths'''
 
         found = []
 
