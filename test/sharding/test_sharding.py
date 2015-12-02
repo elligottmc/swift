@@ -64,12 +64,15 @@ class SampleSharding(object):
         '''Determine sharding threshold from conf and saturate the container with
         enough objects to trigger the container sharder'''
 
-        #If you don't change SHARD_CONTAINER_SIZE to something very small, you will be waiting a long time
+        #If you don't change SHARD_CONTAINER_SIZE to something very small,
+        #you will be waiting a long time
         threshold = ContainerSharder(self.conf).shard_container_size
-        object_count = int(client.get_container(self.url, self.token, self.container)[0]['x-container-object-count'])
+        object_count = int(client.get_container(self.url, self.token, self.container)\
+                               [0]['x-container-object-count'])
 
         if object_count > 0:
-            raise Exception("Container is not empty.  Create fresh container or choose an empty one")
+            raise Exception("Container is not empty.  \
+            Create fresh container or choose an empty one")
 
         else:
 
@@ -83,7 +86,7 @@ class SampleSharding(object):
                 new_object_count += 1
 
             #This can take a while if you haven't dialed down the sharding audit interval
-            time.sleep(int(self.conf['container-sharder']['interval']))
+            time.sleep(int(self.conf['container-sharder']['interval']) * 2)
 
         return new_object_count
 
@@ -104,8 +107,8 @@ class SampleSharding(object):
 
     def query_containers(self):
 
-        '''Find shards for the given root container and
-        retrieve metadata and object counts'''
+        '''Find shards for the given root container
+        and retrieve metadata and object counts'''
 
         dblist = []
 
@@ -147,11 +150,15 @@ class SampleSharding(object):
         query = None
 
         while True:
+            print "starting query"
+            print time.time()
             query = self.query_containers()
+            print "finished query"
+            print time.time()
             if len(query) > 0:
                 break
 
-        return self.query_containers()
+        return query
 
 
 class TestSharding(unittest.TestCase):
@@ -184,22 +191,20 @@ class TestSharding(unittest.TestCase):
 
     def test_sharding(self):
 
-        '''Verify that a container pivots when the threshold is breached,
-        that 2 and only 2 shards are created, that the number of objects in each shard
-        is equivalent to the number of objects uploaded to the root container,
-        and that each container db has appropriate metadata'''
+        '''Verify that a container has sharded
+        and that 2 and only 2 shards are created.'''
 
         self.assertEqual(len(self.shards), 2)
-        self.assertEqual(len(self.shards[0]['objects']) + \
-                         len(self.shards[1]['objects']), self.obj_count)
+
+
+    def test_container_meta(self):
+
+        '''Verify that each container db has appropriate metadata'''
 
         for obj in self.shards:
-            for metastring in ("X-Container-Sysmeta-Shard-Container","X-Container-Sysmeta-Shard-Account"):
+            for metastring in ("X-Container-Sysmeta-Shard-Container", \
+                               "X-Container-Sysmeta-Shard-Account"):
                 self.assertIn(metastring, obj['meta'])
-
-        end = time.time()
-        print("Time from start to finish: %f" % (end - self.start))
-
 
     def tearDown(self):
 
