@@ -38,7 +38,6 @@ class SampleSharding(object):
         except ClientException:
             client.put_container(self.url, self.token, self.container, \
                                  {'X-Container-Sharding': 'On'})
-
         else:
             client.post_container(self.url, self.token, self.container, \
                                   {'X-Container-Sharding': 'On'})
@@ -85,15 +84,13 @@ class SampleSharding(object):
                 os.remove(obj_file.name)
                 new_object_count += 1
 
-            #This can take a while if you haven't dialed down the sharding audit interval
-            time.sleep(int(self.conf['container-sharder']['interval']) * 2)
-
         return new_object_count
+
 
     @staticmethod
     def find_paths(pattern, root_path):
 
-        '''Simple method to find paths'''
+        '''Generic method to find paths'''
 
         found = []
 
@@ -130,10 +127,7 @@ class SampleSharding(object):
                         objcur = conn.cursor()
                         objcur.execute("SELECT name from object")
                         objects = objcur.fetchall()
-                        objlist = []
-                        for obj in objects:
-                            objlist.append(obj[0])
-                        dbdict['objects'] = objlist
+                        dbdict['objects'] = [obj[0] for obj in objects]
                         dblist.append(dbdict)
 
         return dblist
@@ -146,13 +140,16 @@ class SampleSharding(object):
         it takes to audit and shard all containers/shards
         Here we keep querying until shards are found '''
 
+        start = time.time()
         query = None
 
         while True:
             query = self.query_containers()
             if len(query) > 0:
+                end = time.time()
                 break
 
+        print("Estimated Time to Shard: %f" % (end - start))
         return query
 
 
@@ -163,7 +160,7 @@ class TestSharding(unittest.TestCase):
     '''
 
     def setUp(self):
-        self.start = time.time()
+
         testauthurl = 'http://127.0.0.1:8080/auth/v1.0/'
         testuser = 'test:tester'
         testkey = 'testing'
@@ -201,12 +198,9 @@ class TestSharding(unittest.TestCase):
                                "X-Container-Sysmeta-Shard-Account"):
                 self.assertIn(metastring, obj['meta'])
 
-    def tearDown(self):
-
-        #Once it's possible to delete containers we should do that somewhere
-        pass
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
